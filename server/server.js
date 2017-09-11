@@ -32,11 +32,4 @@ app.listen(3000, () => {
     console.log('## Listening on port 3000');
 });
 
-
-// newUser.save().then((result) => {
-//     console.log(`## User ${result.name} was created succesfully`, require('util').inspect(result, true, 5, true));
-// },(error) => {
-//     console.log('## User could not be created', error);
-// });
-
-// mongoose.connection.close();
+module.exports = {app};
