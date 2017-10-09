@@ -60,13 +60,13 @@ app.delete('/todos/:id', (req, res) => {
     let id = req.params.id;
 
     if (!ObjectID.isValid(id)) {
-        res.status(400).send('## ID is not valid');
+        return res.status(400).send('## ID is not valid');
     } else {
         Todo.findByIdAndRemove(id).then((todo) => {
             if (!todo) {
                 return res.status(404).send('Todo with this ID was not found!');
             }
-            res.send(`## Todo was succesfully removed: ${todo}`);
+            res.send({message: 'Todo successfully removed',todo});
         }, () => res.status(400).send());
     }
 });
