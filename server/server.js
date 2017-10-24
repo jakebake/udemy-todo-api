@@ -3,12 +3,12 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const {ObjectID} = require('mongodb');
 
-let {mongoose} = require('./db/mongoose');
-let {Todo} = require('./models/todo');
-let {User} = require('./models/user');
+const config = require('./config/config.js');
+let {mongoose} = require('./db/mongoose.js');
+let {Todo} = require('./models/todo.js');
+let {User} = require('./models/user.js');
 
 let app = express();
-const port = process.env.PORT || 3000;
 
 app.use(bodyParser.json());
 
@@ -112,8 +112,9 @@ app.patch('/todos/:id', (req, res) => {
 
 });
 
+let port = process.env.PORT;
 app.listen(port, () => {
-    console.log(`## Listening on port ${port}`);
+    console.log(`## Listening on port ${port} in NODE_ENV ${config.env}`);
 });
 
 module.exports = {app};
