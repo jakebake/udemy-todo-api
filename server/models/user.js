@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const validator = require('validator');
 const jwt = require('jsonwebtoken');
 const _ = require('lodash');
+const bcrypt = require('bcryptjs');
 
 var UserSchema =  new mongoose.Schema({
     email: {
@@ -37,6 +38,7 @@ var UserSchema =  new mongoose.Schema({
     }]
 });
 
+// Override what User.findOne returns - return only _id and email
 UserSchema.methods.toJSON = function () {
     let user = this;
     let userObject = user.toObject();
@@ -72,6 +74,22 @@ UserSchema.statics.findByToken = function (token) {
         'tokens.access': 'auth'
     });
 };
+
+
+UserSchema.pre('save', function (next) {
+    let user = this;
+
+    if (user.isModified('password')) {
+        bcrypt.genSalt(10, (err, salt) => {
+            bcrypt.hash(user.password, salt, (err, hash) => {
+                user.password = hash;
+                next();
+            });
+        });
+    } else {
+        next();
+    }
+});
 
 // ### The User Model ###
 let User = mongoose.model('User', UserSchema);
