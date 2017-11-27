@@ -4,22 +4,11 @@ const {ObjectID} = require('mongodb');
 
 const {app} = require('./../server');
 const {Todo} = require('./../models/todo');
+const {User} = require('./../models/user');
+const {todos, populateTodos, users, populateUsers} = require('./seed/seed');
 
-const todos = [{
-    _id: new ObjectID(),
-    text: 'First test Todo'
-},{
-    _id: new ObjectID(),
-    text: 'Second test Todo',
-    completed: true,
-    completedAt: 333
-}];
-
-beforeEach((done) => {
-    Todo.remove({}).then(() => {
-        return Todo.insertMany(todos);
-    }).then(() => done());
-});
+beforeEach(populateUsers);
+beforeEach(populateTodos);
 
 describe('POST /todos', () => {
     it('should create a new todo', (done) => {
@@ -69,8 +58,6 @@ describe('GET /todos', () => {
             .get('/todos')
             .expect(200)
             .expect((res) => {
-                // console.log('## res.body.todos[0]', res.body.todos[0]);
-                // expect(res.body.todos[0]).toIncludeKeys(['text', 'completedAt']);
                 expect(res.body.todos[0].text).toBe(todos[0].text);
                 expect(res.body.todos.length).toBe(2);
             })
@@ -84,7 +71,6 @@ describe('GET /todos/:id', () => {
             .get(`/todos/${todos[0]._id.toHexString()}`)
             .expect(200)
             .expect((res) => {
-                console.log('## res.body', res.body);
                 expect(res.body.todo.text).toBe(todos[0].text);
             }).end(done);
     });
@@ -193,3 +179,86 @@ describe('PATCH /todos/:id', () => {
         });
     });
 });
+
+describe('GET /users/me', () => {
+    it('should return user if authenticated', (done) => {
+        request(app)
+            .get('/users/me')
+            .set('x-auth', users[0].tokens[0].token)
+            .expect(200)
+            .expect((res) => {
+                expect(res.body._id).toBe(users[0]._id.toHexString());
+                expect(res.body.email).toBe(users[0].email);
+            })
+            .end(done);
+    });
+
+    it('should return 401 if not authenticated', (done) => {
+        request(app)
+            .get('/users/me')
+            .expect(401)
+            .expect((res) => {
+                expect(res.body).toEqual({});
+            })
+            .end(done);
+    });
+});
+
+describe('POST /users', () => {
+    it('should create a user', (done) => {
+        let email = 'example@example.com';
+        let password = '123mnb!';
+
+        request(app)
+            .post('/users')
+            .send({email, password})
+            .expect(200)
+            .expect((res) => {
+                expect(res.body.email).toBe(email);
+                expect(res.headers['x-auth']).toBeTruthy();
+                expect(res.body._id).toBeTruthy();
+            })
+            .end((err, res) => {
+                if (err) {
+                    return done(err);
+                }
+
+                User.findById(res.body._id).then((user) => {
+                    expect(user.email).toBe(email);
+                    expect(user.password).not.toBe(password);
+                    done();
+                }).catch((e) => done(e));
+            });
+    });
+
+    it('should return validation errors if request invalid', (done) => {
+        let email = 'example@example';
+        let password = '123';
+
+        request(app)
+            .post('/users')
+            .send({email, password})
+            .expect(400)
+            .expect((res) => {
+                expect(res.body.errors).toHaveProperty('email');
+                expect(res.body.errors).toHaveProperty('password');
+            })
+            .end(done);
+    });
+
+    it('should not create a user if email in use', (done) => {
+        let email = users[0].email;
+        let password = '123mnb!';
+
+        request(app)
+            .post('/users')
+            .send({email, password})
+            .expect(400)
+            .expect((res) => {
+                expect(res.body.code).toBe(11000);
+            })
+            .end(done);
+    });
+});
+
+// #### statt toExist() muss toBeTruthy() verwendet werden!!! Neue API hier: https://facebook.github.io/jest/docs/en/expect.html ######

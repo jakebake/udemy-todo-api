@@ -120,14 +120,14 @@ app.post('/users', (req, res) => {
     let body = _.pick(req.body, ['email', 'password']);
     let user = new User(body);
 
-    console.log('## new user', user);
+    //console.log('## new user', user);
 
     user.save().then((result) => {
-        console.log('## result', result);
+        //console.log('## result', result);
         return user.generateAuthToken();
         // res.send(result);
     }).then((token) => {
-        console.log('## user im zweiten then()', user);
+        //console.log('## user im zweiten then()', user);
         res.header('x-auth', token).send(user);
     }).catch((error) => {
         res.status(400).send(error);
